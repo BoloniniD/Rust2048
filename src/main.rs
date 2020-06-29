@@ -14,17 +14,31 @@ use piston_window::*;
 const WIDTH: usize = 4;
 const HEIGHT: usize = 4;
 
-fn stack_dir(x: u8, map: &mut Vec<Vec<u16>>) {
-    //stacks tiles on direction x
+fn stack_dir(d: Event, map: &mut Vec<Vec<u16>>, state: u8) -> u8 {
+    let mut rez: u8 = state;
+    match d.press_args() {
+        Some(Button::Keyboard(Key::W)) => {}
+        Some(Button::Keyboard(Key::A)) => {}
+        Some(Button::Keyboard(Key::S)) => {}
+        Some(Button::Keyboard(Key::D)) => {}
+        Some(Button::Keyboard(Key::Escape)) => {
+            println!("ESC was pressed");
+            let rez = 5;
+        }
+        _ => {
+            println!("Incorrect direction");
+        }
+    }
+    rez
 }
 
 fn main() {
     let mut map = vec![vec![0; WIDTH]; HEIGHT];
     let opengl = OpenGL::V3_2;
     let mut window: PistonWindow = WindowSettings::new(
-        "Rust 2048 by BoloniniD (mah first true exp, it's 100% awful)",
+        "Rust 2048 by BoloniniD (mah first exp, it's 100% awful)",
         [400, 400],
-    )
+    ) // creates a new window
     .graphics_api(opengl)
     .exit_on_esc(true)
     .build()
@@ -35,12 +49,13 @@ fn main() {
         .unwrap();
     let mut glyphs = window
         .load_font(assets.join("FiraSans-Regular.ttf"))
-        .unwrap();
-    window.set_lazy(true);
+        .unwrap(); //loading font
+    window.set_lazy(true); //ayy lmao
     while let Some(e) = window.next() {
         match state {
             0 => {
                 //initializer
+                //waites for SPACE or ESC
                 state = 1;
                 window.draw_2d(&e, |c, g, device| {
                     let transform = c.transform.trans(35.0, 170.0);
@@ -58,6 +73,16 @@ fn main() {
                     text::Text::new_color([1.0, 0.3, 0.1, 1.0], 16)
                         .draw(
                             "*use WASD to stack tiles in different directions*",
+                            &mut glyphs,
+                            &c.draw_state,
+                            transform,
+                            g,
+                        )
+                        .unwrap();
+                    let transform = c.transform.trans(136.0, 300.0);
+                    text::Text::new_color([1.0, 0.3, 0.1, 1.0], 16)
+                        .draw(
+                            "*press ESC to exit*",
                             &mut glyphs,
                             &c.draw_state,
                             transform,
@@ -125,10 +150,19 @@ fn main() {
                         }
                     });
                     println!("Awaiting direction");
-                    let mut d = 1;
+                    let d = window.wait_event();
                     println!("Stacking tiles");
-                    stack_dir(d, &mut map);
-                    println!("Checking state");
+                    state = stack_dir(d, &mut map, state);
+                    println!("Checking states");
+                    let mut cnt = 0;
+                    for i in 0..HEIGHT - 1 {
+                        for j in 0..WIDTH - 1 {
+                            cnt += 1;
+                        }
+                    }
+                    if cnt <= 1 {
+                        state = 3;
+                    }
                 } else {
                     state = 3;
                 }
@@ -140,13 +174,17 @@ fn main() {
             }
             3 => {
                 //lose
-                println!(":(");
+                println!("Better luck next time");
                 state = 4;
             }
             4 => { //retry?
+                println!("Awaiting for input")
+            }
+            5 => {
+                println!("Shutting down")
             }
             _ => {
-                println!("aieou, how did u manage to break this program?");
+                println!("aieou");
             }
         }
     }
