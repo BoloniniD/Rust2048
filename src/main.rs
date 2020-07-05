@@ -6,6 +6,8 @@ extern crate rand;
 
 use rand::Rng;
 use std::io;
+use std::thread::sleep;
+use std::time::Duration;
 
 use piston::window::WindowSettings;
 use piston::TextEvent;
@@ -17,17 +19,23 @@ const HEIGHT: usize = 4;
 fn stack_dir(d: Event, map: &mut Vec<Vec<u16>>, state: u8) -> u8 {
     let mut rez: u8 = state;
     match d.press_args() {
-        Some(Button::Keyboard(Key::W)) => {}
-        Some(Button::Keyboard(Key::A)) => {}
-        Some(Button::Keyboard(Key::S)) => {}
-        Some(Button::Keyboard(Key::D)) => {}
+        Some(Button::Keyboard(Key::W)) => {
+            rez = 1;
+        }
+        Some(Button::Keyboard(Key::A)) => {
+            rez = 1;
+        }
+        Some(Button::Keyboard(Key::S)) => {
+            rez = 1;
+        }
+        Some(Button::Keyboard(Key::D)) => {
+            rez = 1;
+        }
         Some(Button::Keyboard(Key::Escape)) => {
             println!("ESC was pressed");
-            let rez = 5;
+            rez = 5;
         }
-        _ => {
-            println!("Incorrect direction");
-        }
+        _ => {}
     }
     rez
 }
@@ -93,6 +101,9 @@ fn main() {
                 });
                 if let Some(Button::Keyboard(Key::Space)) = e.press_args() {
                     println!("Init was successful!");
+                    window.draw_2d(&e, |c, g, device| {
+                        clear([1.0, 0.7, 0.0, 1.0], g);
+                    });
                     println!("Ready");
                 } else {
                     state = 0;
@@ -109,7 +120,7 @@ fn main() {
                         }
                     }
                 }
-                if (next_2.len() > 0) {
+                if next_2.len() > 0 {
                     let chosen: usize = rand::random::<usize>() % next_2.len();
                     map[next_2[chosen].0][next_2[chosen].1] = 2;
                     window.draw_2d(&e, |c, g, device| {
@@ -149,19 +160,11 @@ fn main() {
                             }
                         }
                     });
+                    state = 6;
                     println!("Awaiting direction");
-                    let d = window.wait_event();
-                    println!("Stacking tiles");
-                    state = stack_dir(d, &mut map, state);
-                    println!("Checking states");
-                    let mut cnt = 0;
-                    for i in 0..HEIGHT - 1 {
-                        for j in 0..WIDTH - 1 {
-                            cnt += 1;
-                        }
-                    }
-                    if cnt <= 1 {
-                        state = 3;
+                    while state == 6 {
+                        let d = window.wait_event();
+                        state = stack_dir(d, &mut map, state);
                     }
                 } else {
                     state = 3;
@@ -170,19 +173,21 @@ fn main() {
             2 => {
                 //win
                 println!("Congrats! You've got the 2048 tile!");
+                let d = window.wait_event();
                 state = 4;
             }
             3 => {
                 //lose
                 println!("Better luck next time");
+                let d = window.wait_event();
                 state = 4;
             }
-            4 => { //retry?
-                println!("Awaiting for input")
+            4 => {
+                //retry?
+                println!("Waiting for input");
+                let d = window.wait_event();
             }
-            5 => {
-                println!("Shutting down")
-            }
+            5 => println!("Shutting down"),
             _ => {
                 println!("aieou");
             }
