@@ -5,12 +5,9 @@ extern crate piston_window;
 extern crate rand;
 
 use rand::Rng;
-use std::io;
-use std::thread::sleep;
 use std::time::Duration;
 
 use piston::window::WindowSettings;
-use piston::TextEvent;
 use piston_window::*;
 
 const WIDTH: usize = 4;
@@ -32,42 +29,38 @@ fn stack_dir(d: Event, map: &mut Vec<Vec<u16>>, state: u8) -> u8 {
             rez = 1;
         }
         Some(Button::Keyboard(Key::Escape)) => {
-            println!("ESC was pressed");
             rez = 5;
         }
-        _ => {}
+        _ => {
+            rez = 50;
+        }
     }
     rez
 }
 
 fn main() {
-    let mut map = vec![vec![0; WIDTH]; HEIGHT];
     let opengl = OpenGL::V3_2;
-    let mut window: PistonWindow = WindowSettings::new(
-        "Rust 2048 by BoloniniD (mah first exp, it's 100% awful)",
-        [400, 400],
-    ) // creates a new window
-    .graphics_api(opengl)
-    .exit_on_esc(true)
-    .build()
-    .unwrap();
-    let mut state: u8 = 0;
+    let mut window: PistonWindow = WindowSettings::new("Rust 2048 by BoloniniD", [400, 450]) // creates a new window
+        .graphics_api(opengl)
+        .exit_on_esc(true)
+        .build()
+        .unwrap();
     let assets = find_folder::Search::ParentsThenKids(3, 3)
         .for_folder("assets")
         .unwrap();
     let mut glyphs = window
         .load_font(assets.join("FiraSans-Regular.ttf"))
         .unwrap(); //loading font
-    window.set_lazy(true); //ayy lmao
+    let mut chk = false;
+    let mut map = vec![vec![0; WIDTH]; HEIGHT];
+    let mut next_2: Vec<(usize, usize)> = Vec::new();
+    let mut state: u8 = 0;
     while let Some(e) = window.next() {
-        match state {
-            0 => {
-                //initializer
-                //waites for SPACE or ESC
-                state = 1;
-                window.draw_2d(&e, |c, g, device| {
+        window.draw_2d(&e, |c, g, d| {
+            clear([1.0, 0.7, 0.0, 1.0], g);
+            match state {
+                0 => {
                     let transform = c.transform.trans(35.0, 170.0);
-                    clear([1.0, 0.7, 0.0, 1.0], g);
                     text::Text::new_color([1.0, 0.3, 0.1, 1.0], 32)
                         .draw(
                             "PRESS [SPACE] TO START",
@@ -97,100 +90,170 @@ fn main() {
                             g,
                         )
                         .unwrap();
-                    glyphs.factory.encoder.flush(device);
-                });
-                if let Some(Button::Keyboard(Key::Space)) = e.press_args() {
-                    println!("Init was successful!");
-                    window.draw_2d(&e, |c, g, device| {
-                        clear([1.0, 0.7, 0.0, 1.0], g);
-                    });
-                    println!("Ready");
-                } else {
-                    state = 0;
+                    glyphs.factory.encoder.flush(d);
+                }
+                1 => {
+                    for i in 0..HEIGHT {
+                        for j in 0..WIDTH {
+                            if map[i][j] > 0 {
+                                let h = map[i][j] as f32;
+                                let ix = i as f64;
+                                let jy = j as f64;
+                                let square = rectangle::square(100.0 * ix, 100.0 * jy, 100.0);
+                                rectangle(
+                                    [h * 0.1 + 0.1, 0.0, 0.0, 1.0], // red
+                                    square,
+                                    c.transform,
+                                    g,
+                                );
+                            } else {
+                                let ix = i as f64;
+                                let jy = j as f64;
+                                let square = rectangle::square(100.0 * ix, 100.0 * jy, 100.0);
+                                rectangle(
+                                    [1.0, 0.7, 0.0, 1.0], // red
+                                    square,
+                                    c.transform,
+                                    g,
+                                );
+                            }
+                        }
+                    }
+                }
+                2 => {
+                    let transform = c.transform.trans(59.0, 170.0);
+                    text::Text::new_color([1.0, 0.3, 0.3, 1.0], 32)
+                        .draw("CONGRATULATIONS!", &mut glyphs, &c.draw_state, transform, g)
+                        .unwrap();
+
+                    let transform = c.transform.trans(35.0, 210.0);
+                    text::Text::new_color([1.0, 0.3, 0.3, 1.0], 20)
+                        .draw(
+                            "PRESS Y TO RESTART, PRESS N TO EXIT",
+                            &mut glyphs,
+                            &c.draw_state,
+                            transform,
+                            g,
+                        )
+                        .unwrap();
+                    glyphs.factory.encoder.flush(d);
+                }
+                3 => {
+                    let transform = c.transform.trans(100.0, 170.0);
+                    text::Text::new_color([1.0, 0.3, 0.3, 1.0], 34)
+                        .draw("YOU'VE LOST!", &mut glyphs, &c.draw_state, transform, g)
+                        .unwrap();
+
+                    let transform = c.transform.trans(35.0, 210.0);
+                    text::Text::new_color([1.0, 0.3, 0.3, 1.0], 20)
+                        .draw(
+                            "PRESS Y TO RESTART, PRESS N TO EXIT",
+                            &mut glyphs,
+                            &c.draw_state,
+                            transform,
+                            g,
+                        )
+                        .unwrap();
+                    glyphs.factory.encoder.flush(d);
+                }
+                4 => {
+                    chk = true;
+                }
+                _ => {
+                    println!("Something went wrong");
+                    chk = true;
+                }
+            }
+        });
+        match state {
+            0 => {
+                next_2 = Vec::new();
+                let d = window.wait_event_timeout(Duration::new(3, 0));
+                if d != None {
+                    match d.unwrap().press_args() {
+                        Some(Button::Keyboard(Key::Space)) => {
+                            for i in 0..HEIGHT {
+                                for j in 0..WIDTH {
+                                    if map[i][j] == 0 {
+                                        next_2.push((i, j));
+                                    }
+                                }
+                            }
+                            if next_2.len() == 0 {
+                                state = 3;
+                            } else {
+                                let chosen: usize = rand::random::<usize>() % next_2.len();
+                                map[next_2[chosen].0][next_2[chosen].1] = 2;
+                            }
+                            state = 1;
+                        }
+                        Some(Button::Keyboard(Key::Escape)) => {
+                            state = 4;
+                        }
+                        _ => {}
+                    }
                 }
             }
             1 => {
-                // main state
-                println!("Drawing map");
-                let mut next_2: Vec<(usize, usize)> = Vec::new();
-                for i in 0..HEIGHT - 1 {
-                    for j in 0..WIDTH - 1 {
-                        if map[i][j] == 0 {
-                            next_2.push((i, j));
-                        }
-                    }
-                }
-                if next_2.len() > 0 {
-                    let chosen: usize = rand::random::<usize>() % next_2.len();
-                    map[next_2[chosen].0][next_2[chosen].1] = 2;
-                    window.draw_2d(&e, |c, g, device| {
-                        clear([1.0, 0.7, 0.0, 1.0], g);
-                        for i in 0..HEIGHT - 1 {
-                            for j in 0..WIDTH - 1 {
-                                if map[i][j] > 0 {
-                                    let h = map[i][j] as f32;
-                                    let ix = i as f64;
-                                    let jy = j as f64;
-                                    rectangle(
-                                        [h * 0.1 + 0.1, 0.0, 0.0, 1.0], // red
-                                        [
-                                            100.0 * ix,
-                                            100.0 * jy,
-                                            100.0 * (ix + 1.0),
-                                            100.0 * (jy + 1.0),
-                                        ],
-                                        c.transform,
-                                        g,
-                                    );
-                                } else {
-                                    let ix = i as f64;
-                                    let jy = j as f64;
-                                    rectangle(
-                                        [1.0, 0.7, 0.0, 1.0], // red
-                                        [
-                                            100.0 * ix,
-                                            100.0 * jy,
-                                            100.0 * (ix + 1.0),
-                                            100.0 * (jy + 1.0),
-                                        ],
-                                        c.transform,
-                                        g,
-                                    );
+                let d = window.wait_event_timeout(Duration::new(3, 0));
+                if d != None {
+                    state = stack_dir(d.unwrap(), &mut map, state);
+                    if state == 1 {
+                        next_2 = Vec::new();
+                        for i in 0..HEIGHT {
+                            for j in 0..WIDTH {
+                                if map[i][j] == 0 {
+                                    next_2.push((i, j));
                                 }
                             }
                         }
-                    });
-                    state = 6;
-                    println!("Awaiting direction");
-                    while state == 6 {
-                        let d = window.wait_event();
-                        state = stack_dir(d, &mut map, state);
+                        if next_2.len() == 0 {
+                            state = 3;
+                        } else {
+                            let chosen: usize = rand::random::<usize>() % next_2.len();
+                            map[next_2[chosen].0][next_2[chosen].1] = 2;
+                        }
+                    } else if state == 50 {
+                        state = 1;
                     }
-                } else {
-                    state = 3;
                 }
             }
-            2 => {
-                //win
-                println!("Congrats! You've got the 2048 tile!");
-                let d = window.wait_event();
-                state = 4;
+            2..=3 => {
+                let d = window.wait_event_timeout(Duration::new(3, 0));
+                if d != None {
+                    match d.unwrap().press_args() {
+                        Some(Button::Keyboard(Key::N)) => {
+                            state = 4;
+                        }
+                        Some(Button::Keyboard(Key::Y)) => {
+                            for i in 0..HEIGHT {
+                                for j in 0..WIDTH {
+                                    map[i][j] = 0;
+                                }
+                            }
+                            state = 1;
+                            for i in 0..HEIGHT {
+                                for j in 0..WIDTH {
+                                    if map[i][j] == 0 {
+                                        next_2.push((i, j));
+                                    }
+                                }
+                            }
+                            if next_2.len() == 0 {
+                                state = 3;
+                            } else {
+                                let chosen: usize = rand::random::<usize>() % next_2.len();
+                                map[next_2[chosen].0][next_2[chosen].1] = 2;
+                            }
+                        }
+                        _ => {}
+                    }
+                }
             }
-            3 => {
-                //lose
-                println!("Better luck next time");
-                let d = window.wait_event();
-                state = 4;
-            }
-            4 => {
-                //retry?
-                println!("Waiting for input");
-                let d = window.wait_event();
-            }
-            5 => println!("Shutting down"),
-            _ => {
-                println!("aieou");
-            }
+            _ => {}
+        }
+        if chk {
+            break;
         }
     }
 }
