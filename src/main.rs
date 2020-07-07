@@ -4,7 +4,6 @@ extern crate piston;
 extern crate piston_window;
 extern crate rand;
 
-use rand::Rng;
 use std::time::Duration;
 
 use piston::window::WindowSettings;
@@ -13,26 +12,124 @@ use piston_window::*;
 const WIDTH: usize = 4;
 const HEIGHT: usize = 4;
 
-fn stack_dir(d: Event, map: &mut Vec<Vec<u16>>, state: u8) -> u8 {
-    let mut rez: u8 = state;
+fn stack_dir(d: Event, map: &mut Vec<Vec<u16>>) -> u8 {
+    let mut rez: u8 = 0;
     match d.press_args() {
         Some(Button::Keyboard(Key::W)) => {
+            for i in 0..WIDTH {
+                for _ in 0..4 {
+                    for j in 0..HEIGHT - 1 {
+                        if map[i][j] == 0 {
+                            map[i][j] = map[i][j + 1];
+                            map[i][j + 1] = 0;
+                        }
+                    }
+                }
+                for j in 0..HEIGHT - 1 {
+                    if map[i][j] == map[i][j + 1] {
+                        map[i][j] += map[i][j + 1];
+                        map[i][j + 1] = 0;
+                    }
+                }
+                for _ in 0..4 {
+                    for j in 0..HEIGHT - 1 {
+                        if map[i][j] == 0 {
+                            map[i][j] = map[i][j + 1];
+                            map[i][j + 1] = 0;
+                        }
+                    }
+                }
+            }
             rez = 1;
         }
         Some(Button::Keyboard(Key::A)) => {
+            for j in 0..HEIGHT {
+                for _ in 0..4 {
+                    for i in 0..WIDTH - 1 {
+                        if map[i][j] == 0 {
+                            map[i][j] = map[i + 1][j];
+                            map[i + 1][j] = 0;
+                        }
+                    }
+                }
+                for i in 0..WIDTH - 1 {
+                    if map[i][j] == map[i + 1][j] {
+                        map[i][j] += map[i + 1][j];
+                        map[i + 1][j] = 0;
+                    }
+                }
+                for _ in 0..4 {
+                    for i in 0..WIDTH - 1 {
+                        if map[i][j] == 0 {
+                            map[i][j] = map[i + 1][j];
+                            map[i + 1][j] = 0;
+                        }
+                    }
+                }
+            }
             rez = 1;
         }
         Some(Button::Keyboard(Key::S)) => {
+            for i in 0..WIDTH {
+                for _ in 0..4 {
+                    for j in 1..HEIGHT {
+                        if map[i][HEIGHT - j] == 0 {
+                            map[i][HEIGHT - j] = map[i][HEIGHT - j - 1];
+                            map[i][HEIGHT - j - 1] = 0;
+                        }
+                    }
+                }
+                for j in 1..HEIGHT {
+                    if map[i][HEIGHT - j] == map[i][HEIGHT - j - 1] {
+                        map[i][HEIGHT - j] += map[i][HEIGHT - j - 1];
+                        map[i][HEIGHT - j - 1] = 0;
+                    }
+                }
+                for _ in 0..4 {
+                    for j in 1..HEIGHT {
+                        if map[i][HEIGHT - j] == 0 {
+                            map[i][HEIGHT - j] = map[i][HEIGHT - j - 1];
+                            map[i][HEIGHT - j - 1] = 0;
+                        }
+                    }
+                }
+            }
             rez = 1;
         }
         Some(Button::Keyboard(Key::D)) => {
+            for j in 0..HEIGHT {
+                for _ in 0..4 {
+                    for i in 1..WIDTH {
+                        if map[WIDTH - i][j] == 0 {
+                            map[WIDTH - i][j] = map[WIDTH - i - 1][j];
+                            map[WIDTH - i - 1][j] = 0;
+                        }
+                    }
+                }
+                for i in 1..WIDTH {
+                    if map[WIDTH - i][j] == map[WIDTH - i - 1][j] {
+                        map[WIDTH - i][j] += map[WIDTH - i - 1][j];
+                        map[WIDTH - i - 1][j] = 0;
+                    }
+                }
+                for _ in 0..4 {
+                    for i in 1..WIDTH {
+                        if map[WIDTH - i][j] == 0 {
+                            map[WIDTH - i][j] = map[WIDTH - i - 1][j];
+                            map[WIDTH - i - 1][j] = 0;
+                        }
+                    }
+                }
+            }
             rez = 1;
         }
         Some(Button::Keyboard(Key::Escape)) => {
-            rez = 5;
+            rez = 4;
+            // exit state
         }
         _ => {
             rez = 50;
+            // actually, it does magic
         }
     }
     rez
@@ -168,7 +265,7 @@ fn main() {
         match state {
             0 => {
                 next_2 = Vec::new();
-                let d = window.wait_event_timeout(Duration::new(3, 0));
+                let d = window.wait_event_timeout(Duration::new(1, 0));
                 if d != None {
                     match d.unwrap().press_args() {
                         Some(Button::Keyboard(Key::Space)) => {
@@ -195,9 +292,9 @@ fn main() {
                 }
             }
             1 => {
-                let d = window.wait_event_timeout(Duration::new(3, 0));
+                let d = window.wait_event_timeout(Duration::new(10, 0));
                 if d != None {
-                    state = stack_dir(d.unwrap(), &mut map, state);
+                    state = stack_dir(d.unwrap(), &mut map);
                     if state == 1 {
                         next_2 = Vec::new();
                         for i in 0..HEIGHT {
