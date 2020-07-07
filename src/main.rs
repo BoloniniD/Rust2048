@@ -12,11 +12,11 @@ use piston_window::*;
 const WIDTH: usize = 4;
 const HEIGHT: usize = 4;
 
-fn stack_dir(d: Event, map: &mut Vec<Vec<u16>>) -> u8 {
+fn stack_dir(d: Event, map: &mut Vec<Vec<u16>>) -> u8 { // function that stacks tiles in some direction
     let mut rez: u8 = 0;
-    match d.press_args() {
+    match d.press_args() { //matches events with directions
         Some(Button::Keyboard(Key::W)) => {
-            for i in 0..WIDTH {
+            for i in 0..WIDTH { //up
                 for _ in 0..4 {
                     for j in 0..HEIGHT - 1 {
                         if map[i][j] == 0 {
@@ -42,7 +42,7 @@ fn stack_dir(d: Event, map: &mut Vec<Vec<u16>>) -> u8 {
             }
             rez = 1;
         }
-        Some(Button::Keyboard(Key::A)) => {
+        Some(Button::Keyboard(Key::A)) => { //left
             for j in 0..HEIGHT {
                 for _ in 0..4 {
                     for i in 0..WIDTH - 1 {
@@ -69,7 +69,7 @@ fn stack_dir(d: Event, map: &mut Vec<Vec<u16>>) -> u8 {
             }
             rez = 1;
         }
-        Some(Button::Keyboard(Key::S)) => {
+        Some(Button::Keyboard(Key::S)) => { //down
             for i in 0..WIDTH {
                 for _ in 0..4 {
                     for j in 1..HEIGHT {
@@ -96,7 +96,7 @@ fn stack_dir(d: Event, map: &mut Vec<Vec<u16>>) -> u8 {
             }
             rez = 1;
         }
-        Some(Button::Keyboard(Key::D)) => {
+        Some(Button::Keyboard(Key::D)) => { // right
             for j in 0..HEIGHT {
                 for _ in 0..4 {
                     for i in 1..WIDTH {
@@ -130,6 +130,8 @@ fn stack_dir(d: Event, map: &mut Vec<Vec<u16>>) -> u8 {
         _ => {
             rez = 50;
             // actually, it does magic
+            // if event is not one from the list above, this "state"
+            // allows program to skip the step with random choice of a new 2 tile
         }
     }
     rez
@@ -142,21 +144,22 @@ fn main() {
         .exit_on_esc(true)
         .build()
         .unwrap();
-    let assets = find_folder::Search::ParentsThenKids(3, 3)
+    let assets = find_folder::Search::ParentsThenKids(3, 3) // searches for an assets folder
         .for_folder("assets")
         .unwrap();
-    let mut glyphs = window
+    let mut glyphs = window //loads font
         .load_font(assets.join("FiraSans-Regular.ttf"))
         .unwrap(); //loading font
-    let mut chk = false;
-    let mut map = vec![vec![0; WIDTH]; HEIGHT];
-    let mut next_2: Vec<(usize, usize)> = Vec::new();
-    let mut state: u8 = 0;
+    let mut chk = false; // if chk == true, then stop the program
+    let mut map = vec![vec![0; WIDTH]; HEIGHT]; // game map
+    let mut next_2: Vec<(usize, usize)> = Vec::new(); // vector for 0-tiles enumeration
+    let mut state: u8 = 0; // state
     while let Some(e) = window.next() {
         window.draw_2d(&e, |c, g, d| {
-            clear([1.0, 0.7, 0.0, 1.0], g);
+            clear([1.0, 0.7, 0.0, 1.0], g); // background
             match state {
                 0 => {
+                    // initialization
                     let transform = c.transform.trans(35.0, 170.0);
                     text::Text::new_color([1.0, 0.3, 0.1, 1.0], 32)
                         .draw(
@@ -190,6 +193,7 @@ fn main() {
                     glyphs.factory.encoder.flush(d);
                 }
                 1 => {
+                    // main game state, draws tiles, etc.
                     for i in 0..HEIGHT {
                         for j in 0..WIDTH {
                             if map[i][j] > 0 {
@@ -218,6 +222,7 @@ fn main() {
                     }
                 }
                 2 => {
+                    // win state
                     let transform = c.transform.trans(59.0, 170.0);
                     text::Text::new_color([1.0, 0.3, 0.3, 1.0], 32)
                         .draw("CONGRATULATIONS!", &mut glyphs, &c.draw_state, transform, g)
@@ -236,6 +241,7 @@ fn main() {
                     glyphs.factory.encoder.flush(d);
                 }
                 3 => {
+                    // loose state
                     let transform = c.transform.trans(100.0, 170.0);
                     text::Text::new_color([1.0, 0.3, 0.3, 1.0], 34)
                         .draw("YOU'VE LOST!", &mut glyphs, &c.draw_state, transform, g)
@@ -254,9 +260,11 @@ fn main() {
                     glyphs.factory.encoder.flush(d);
                 }
                 4 => {
+                    // exit state
                     chk = true;
                 }
                 _ => {
+                    // err state
                     println!("Something went wrong");
                     chk = true;
                 }
@@ -264,6 +272,7 @@ fn main() {
         });
         match state {
             0 => {
+                // state 0 event matcher
                 next_2 = Vec::new();
                 let d = window.wait_event_timeout(Duration::new(1, 0));
                 if d != None {
@@ -281,8 +290,8 @@ fn main() {
                             } else {
                                 let chosen: usize = rand::random::<usize>() % next_2.len();
                                 map[next_2[chosen].0][next_2[chosen].1] = 2;
+                                state = 1;
                             }
-                            state = 1;
                         }
                         Some(Button::Keyboard(Key::Escape)) => {
                             state = 4;
@@ -292,6 +301,7 @@ fn main() {
                 }
             }
             1 => {
+                // state 1 evnt matcher
                 let d = window.wait_event_timeout(Duration::new(10, 0));
                 if d != None {
                     state = stack_dir(d.unwrap(), &mut map);
@@ -316,6 +326,7 @@ fn main() {
                 }
             }
             2..=3 => {
+                //state 2 and 3 event matcher
                 let d = window.wait_event_timeout(Duration::new(3, 0));
                 if d != None {
                     match d.unwrap().press_args() {
@@ -350,6 +361,7 @@ fn main() {
             _ => {}
         }
         if chk {
+            // exit the loop
             break;
         }
     }
