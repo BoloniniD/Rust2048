@@ -12,7 +12,7 @@ use piston_window::*;
 const WIDTH: usize = 4;
 const HEIGHT: usize = 4;
 
-fn stack_dir(d: Event, map: &mut Vec<Vec<u16>>) -> u8 {
+fn stack_dir(d: Event, map: &mut Vec<Vec<u16>>, mut score: u32) -> (u8, u32) {
     // function that stacks tiles in some direction
     let mut rez: u8 = 0;
     match d.press_args() {
@@ -31,6 +31,7 @@ fn stack_dir(d: Event, map: &mut Vec<Vec<u16>>) -> u8 {
                 for j in 0..HEIGHT - 1 {
                     if map[i][j] == map[i][j + 1] {
                         map[i][j] += map[i][j + 1];
+                        score += map[i][j] as u32;
                         map[i][j + 1] = 0;
                     }
                 }
@@ -59,6 +60,7 @@ fn stack_dir(d: Event, map: &mut Vec<Vec<u16>>) -> u8 {
                 for i in 0..WIDTH - 1 {
                     if map[i][j] == map[i + 1][j] {
                         map[i][j] += map[i + 1][j];
+                        score += map[i][j] as u32;
                         map[i + 1][j] = 0;
                     }
                 }
@@ -87,6 +89,7 @@ fn stack_dir(d: Event, map: &mut Vec<Vec<u16>>) -> u8 {
                 for j in 1..HEIGHT {
                     if map[i][HEIGHT - j] == map[i][HEIGHT - j - 1] {
                         map[i][HEIGHT - j] += map[i][HEIGHT - j - 1];
+                        score += map[i][HEIGHT - j] as u32;
                         map[i][HEIGHT - j - 1] = 0;
                     }
                 }
@@ -115,6 +118,7 @@ fn stack_dir(d: Event, map: &mut Vec<Vec<u16>>) -> u8 {
                 for i in 1..WIDTH {
                     if map[WIDTH - i][j] == map[WIDTH - i - 1][j] {
                         map[WIDTH - i][j] += map[WIDTH - i - 1][j];
+                        score += map[WIDTH - i][j] as u32;
                         map[WIDTH - i - 1][j] = 0;
                     }
                 }
@@ -140,7 +144,7 @@ fn stack_dir(d: Event, map: &mut Vec<Vec<u16>>) -> u8 {
             // allows program to skip the step with random choice of a new 2 tile
         }
     }
-    rez
+    (rez, score)
 }
 
 fn main() {
@@ -160,17 +164,42 @@ fn main() {
     let mut map = vec![vec![0; WIDTH]; HEIGHT]; // game map
     let mut next_2: Vec<(usize, usize)> = Vec::new(); // vector for 0-tiles enumeration
     let mut state: u8 = 0; // state
+    let mut score: u32 = 0; // score
     while let Some(e) = window.next() {
         window.draw_2d(&e, |c, g, d| {
             clear([1.0, 0.7, 0.0, 1.0], g); // background
             match state {
                 0 => {
                     // initialization
-
-                    let transform = c.transform.trans(35.0, 170.0);
-                    text::Text::new_color([1.0, 0.3, 0.1, 1.0], 32)
+                    let xc: f64 = 50.0;
+                    let sq = rectangle::square(xc, 30.0, 70.0);
+                    rectangle([0.6, 0.2, 0.1, 1.0], sq, c.transform, g);
+                    let transform = c.transform.trans(75.5, 76.5);
+                    text::Text::new_color([0.1, 1.0, 0.1, 1.0], 44)
+                        .draw("2", &mut glyphs, &c.draw_state, transform, g)
+                        .unwrap();
+                    let sq = rectangle::square(xc + 80.0, 30.0, 70.0);
+                    rectangle([0.6, 0.2, 0.1, 1.0], sq, c.transform, g);
+                    let transform = c.transform.trans(155.5, 76.5);
+                    text::Text::new_color([0.1, 1.0, 0.1, 1.0], 44)
+                        .draw("0", &mut glyphs, &c.draw_state, transform, g)
+                        .unwrap();
+                    let sq = rectangle::square(xc + 160.0, 30.0, 70.0);
+                    rectangle([0.6, 0.2, 0.1, 1.0], sq, c.transform, g);
+                    let transform = c.transform.trans(235.5, 76.5);
+                    text::Text::new_color([0.1, 1.0, 0.1, 1.0], 44)
+                        .draw("4", &mut glyphs, &c.draw_state, transform, g)
+                        .unwrap();
+                    let sq = rectangle::square(xc + 240.0, 30.0, 70.0);
+                    rectangle([0.6, 0.2, 0.1, 1.0], sq, c.transform, g);
+                    let transform = c.transform.trans(315.5, 76.5);
+                    text::Text::new_color([0.1, 1.0, 0.1, 1.0], 44)
+                        .draw("8", &mut glyphs, &c.draw_state, transform, g)
+                        .unwrap();
+                    let transform = c.transform.trans(22.0, 170.0);
+                    text::Text::new_color([1.0, 0.2, 0.1, 1.0], 31)
                         .draw(
-                            "PRESS [SPACE] TO START",
+                            "* PRESS [SPACE] TO START *",
                             &mut glyphs,
                             &c.draw_state,
                             transform,
@@ -178,7 +207,7 @@ fn main() {
                         )
                         .unwrap();
                     let transform = c.transform.trans(40.0, 190.0);
-                    text::Text::new_color([1.0, 0.3, 0.1, 1.0], 16)
+                    text::Text::new_color([1.0, 0.2, 0.1, 1.0], 16)
                         .draw(
                             "*use WASD to stack tiles in different directions*",
                             &mut glyphs,
@@ -187,10 +216,26 @@ fn main() {
                             g,
                         )
                         .unwrap();
-                    let transform = c.transform.trans(136.0, 300.0);
-                    text::Text::new_color([1.0, 0.3, 0.1, 1.0], 16)
+                    let transform = c.transform.trans(52.0, 230.0);
+                    text::Text::new_color([1.0, 0.2, 0.1, 1.0], 31)
                         .draw(
-                            "*press ESC to exit*",
+                            "* PRESS [ESC] TO EXIT *",
+                            &mut glyphs,
+                            &c.draw_state,
+                            transform,
+                            g,
+                        )
+                        .unwrap();
+                    glyphs.factory.encoder.flush(d);
+                    let transform = c.transform.trans(140.0, 330.0);
+                    text::Text::new_color([1.0, 0.2, 0.1, 1.0], 20)
+                        .draw("{by BoloniniD}", &mut glyphs, &c.draw_state, transform, g)
+                        .unwrap();
+                    glyphs.factory.encoder.flush(d);
+                    let transform = c.transform.trans(80.0, 357.0);
+                    text::Text::new_color([1.0, 0.2, 0.1, 1.0], 18)
+                        .draw(
+                            "{the original is somewhere else...}",
                             &mut glyphs,
                             &c.draw_state,
                             transform,
@@ -201,37 +246,54 @@ fn main() {
                 }
                 1 => {
                     // main game state, draws tiles, etc.
+                    let tr = c.transform.trans(110.0, 35.0);
+                    text::Text::new_color([1.0, 0.2, 0.1, 1.0], 28)
+                        .draw("SCORE: ", &mut glyphs, &c.draw_state, tr, g)
+                        .unwrap();
+                        glyphs.factory.encoder.flush(d);
+                    let tr = c.transform.trans(240.0, 35.0);
+                    let sc = score.to_string();
+                    let sc: &str = &sc[..];
+                    let sc: &str = &sc[..];
+                    text::Text::new_color([1.0, 0.2, 0.1, 1.0], 28)
+                        .draw(sc, &mut glyphs, &c.draw_state, tr, g)
+                        .unwrap();
+                    glyphs.factory.encoder.flush(d);
                     for i in 0..HEIGHT {
                         for j in 0..WIDTH {
                             if map[i][j] > 0 {
                                 let h = map[i][j] as f32;
                                 let ix = i as f64;
                                 let jy = j as f64;
-                                let square = rectangle::square(100.0 * ix, 100.0 * jy, 100.0);
+                                let square =
+                                    rectangle::square(100.0 * ix, 100.0 * jy + 50.0, 100.0);
                                 rectangle(
                                     [h.log(2.0) * 0.05 + 0.1, 0.0, 0.0, 1.0], // different red
                                     square,
                                     c.transform,
                                     g,
                                 );
-                                let mut transform =
-                                    c.transform.trans(0.0, 0.0);
+                                let mut transform = c.transform.trans(0.0, 0.0);
                                 match map[i][j] {
                                     0..=9 => {
-                                        transform =
-                                            c.transform.trans(100.0 * ix + 43.0, 100.0 * jy + 56.5);
+                                        transform = c
+                                            .transform
+                                            .trans(100.0 * ix + 43.0, 100.0 * jy + 106.5);
                                     }
                                     10..=99 => {
-                                        transform =
-                                            c.transform.trans(100.0 * ix + 36.0, 100.0 * jy + 56.5);
+                                        transform = c
+                                            .transform
+                                            .trans(100.0 * ix + 36.0, 100.0 * jy + 106.5);
                                     }
                                     100..=999 => {
-                                        transform =
-                                            c.transform.trans(100.0 * ix + 29.0, 100.0 * jy + 56.5);
+                                        transform = c
+                                            .transform
+                                            .trans(100.0 * ix + 29.0, 100.0 * jy + 106.5);
                                     }
                                     1000..=9999 => {
-                                        transform =
-                                            c.transform.trans(100.0 * ix + 20.5, 100.0 * jy + 56.5);
+                                        transform = c
+                                            .transform
+                                            .trans(100.0 * ix + 20.5, 100.0 * jy + 106.5);
                                     }
                                     _ => {}
                                 }
@@ -241,16 +303,6 @@ fn main() {
                                     .draw(st, &mut glyphs, &c.draw_state, transform, g)
                                     .unwrap();
                                 glyphs.factory.encoder.flush(d);
-                            } else {
-                                let ix = i as f64;
-                                let jy = j as f64;
-                                let square = rectangle::square(100.0 * ix, 100.0 * jy, 100.0);
-                                rectangle(
-                                    [1.0, 0.7, 0.0, 1.0], // yellow
-                                    square,
-                                    c.transform,
-                                    g,
-                                );
                             }
                         }
                     }
@@ -338,7 +390,9 @@ fn main() {
                 // state 1 event matcher
                 let d = window.wait_event_timeout(Duration::new(3, 0));
                 if d != None {
-                    state = stack_dir(d.unwrap(), &mut map);
+                    let stac = stack_dir(d.unwrap(), &mut map, score);
+                    state = stac.0;
+                    score = stac.1;
                     if state == 1 {
                         next_2 = Vec::new();
                         for i in 0..HEIGHT {
