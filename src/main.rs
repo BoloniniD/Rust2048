@@ -166,6 +166,7 @@ fn main() {
             match state {
                 0 => {
                     // initialization
+
                     let transform = c.transform.trans(35.0, 170.0);
                     text::Text::new_color([1.0, 0.3, 0.1, 1.0], 32)
                         .draw(
@@ -208,50 +209,37 @@ fn main() {
                                 let jy = j as f64;
                                 let square = rectangle::square(100.0 * ix, 100.0 * jy, 100.0);
                                 rectangle(
-                                    [h * 0.1 + 0.1, 0.0, 0.0, 1.0], // different red
+                                    [h.log(2.0) * 0.05 + 0.1, 0.0, 0.0, 1.0], // different red
                                     square,
                                     c.transform,
                                     g,
                                 );
+                                let mut transform =
+                                    c.transform.trans(0.0, 0.0);
                                 match map[i][j] {
                                     0..=9 => {
-                                        let transform =
-                                            c.transform.trans(100.0 * ix + 50.0, 100.0 * jy + 50.0);
-                                        let st = map[i][j].to_string();
-                                        let st: &str = &st[..];
-                                        text::Text::new_color([0.1, 1.0, 0.1, 1.0], 32)
-                                            .draw(st, &mut glyphs, &c.draw_state, transform, g)
-                                            .unwrap();
+                                        transform =
+                                            c.transform.trans(100.0 * ix + 43.0, 100.0 * jy + 56.5);
                                     }
                                     10..=99 => {
-                                        let transform =
-                                            c.transform.trans(100.0 * ix + 50.0, 100.0 * jy + 50.0);
-                                        let st = map[i][j].to_string();
-                                        let st: &str = &st[..];
-                                        text::Text::new_color([0.1, 1.0, 0.1, 1.0], 32)
-                                            .draw(st, &mut glyphs, &c.draw_state, transform, g)
-                                            .unwrap();
+                                        transform =
+                                            c.transform.trans(100.0 * ix + 36.0, 100.0 * jy + 56.5);
                                     }
                                     100..=999 => {
-                                        let transform =
-                                            c.transform.trans(100.0 * ix + 50.0, 100.0 * jy + 50.0);
-                                        let st = map[i][j].to_string();
-                                        let st: &str = &st[..];
-                                        text::Text::new_color([0.1, 1.0, 0.1, 1.0], 32)
-                                            .draw(st, &mut glyphs, &c.draw_state, transform, g)
-                                            .unwrap();
+                                        transform =
+                                            c.transform.trans(100.0 * ix + 29.0, 100.0 * jy + 56.5);
                                     }
                                     1000..=9999 => {
-                                        let transform =
-                                            c.transform.trans(100.0 * ix + 50.0, 100.0 * jy + 50.0);
-                                        let st = map[i][j].to_string();
-                                        let st: &str = &st[..];
-                                        text::Text::new_color([0.1, 1.0, 0.1, 1.0], 32)
-                                            .draw(st, &mut glyphs, &c.draw_state, transform, g)
-                                            .unwrap();
+                                        transform =
+                                            c.transform.trans(100.0 * ix + 20.5, 100.0 * jy + 56.5);
                                     }
                                     _ => {}
                                 }
+                                let st = map[i][j].to_string();
+                                let st: &str = &st[..];
+                                text::Text::new_color([0.1, 1.0, 0.1, 1.0], 32)
+                                    .draw(st, &mut glyphs, &c.draw_state, transform, g)
+                                    .unwrap();
                                 glyphs.factory.encoder.flush(d);
                             } else {
                                 let ix = i as f64;
@@ -348,7 +336,7 @@ fn main() {
             }
             1 => {
                 // state 1 event matcher
-                let d = window.wait_event_timeout(Duration::new(10, 0));
+                let d = window.wait_event_timeout(Duration::new(3, 0));
                 if d != None {
                     state = stack_dir(d.unwrap(), &mut map);
                     if state == 1 {
