@@ -12,11 +12,14 @@ use piston_window::*;
 const WIDTH: usize = 4;
 const HEIGHT: usize = 4;
 
-fn stack_dir(d: Event, map: &mut Vec<Vec<u16>>) -> u8 { // function that stacks tiles in some direction
+fn stack_dir(d: Event, map: &mut Vec<Vec<u16>>) -> u8 {
+    // function that stacks tiles in some direction
     let mut rez: u8 = 0;
-    match d.press_args() { //matches events with directions
+    match d.press_args() {
+        //matches events with directions
         Some(Button::Keyboard(Key::W)) => {
-            for i in 0..WIDTH { //up
+            for i in 0..WIDTH {
+                //up
                 for _ in 0..4 {
                     for j in 0..HEIGHT - 1 {
                         if map[i][j] == 0 {
@@ -42,7 +45,8 @@ fn stack_dir(d: Event, map: &mut Vec<Vec<u16>>) -> u8 { // function that stacks 
             }
             rez = 1;
         }
-        Some(Button::Keyboard(Key::A)) => { //left
+        Some(Button::Keyboard(Key::A)) => {
+            //left
             for j in 0..HEIGHT {
                 for _ in 0..4 {
                     for i in 0..WIDTH - 1 {
@@ -69,7 +73,8 @@ fn stack_dir(d: Event, map: &mut Vec<Vec<u16>>) -> u8 { // function that stacks 
             }
             rez = 1;
         }
-        Some(Button::Keyboard(Key::S)) => { //down
+        Some(Button::Keyboard(Key::S)) => {
+            //down
             for i in 0..WIDTH {
                 for _ in 0..4 {
                     for j in 1..HEIGHT {
@@ -96,7 +101,8 @@ fn stack_dir(d: Event, map: &mut Vec<Vec<u16>>) -> u8 { // function that stacks 
             }
             rez = 1;
         }
-        Some(Button::Keyboard(Key::D)) => { // right
+        Some(Button::Keyboard(Key::D)) => {
+            // right
             for j in 0..HEIGHT {
                 for _ in 0..4 {
                     for i in 1..WIDTH {
@@ -202,17 +208,57 @@ fn main() {
                                 let jy = j as f64;
                                 let square = rectangle::square(100.0 * ix, 100.0 * jy, 100.0);
                                 rectangle(
-                                    [h * 0.1 + 0.1, 0.0, 0.0, 1.0], // red
+                                    [h * 0.1 + 0.1, 0.0, 0.0, 1.0], // different red
                                     square,
                                     c.transform,
                                     g,
                                 );
+                                match map[i][j] {
+                                    0..=9 => {
+                                        let transform =
+                                            c.transform.trans(100.0 * ix + 50.0, 100.0 * jy + 50.0);
+                                        let st = map[i][j].to_string();
+                                        let st: &str = &st[..];
+                                        text::Text::new_color([0.1, 1.0, 0.1, 1.0], 32)
+                                            .draw(st, &mut glyphs, &c.draw_state, transform, g)
+                                            .unwrap();
+                                    }
+                                    10..=99 => {
+                                        let transform =
+                                            c.transform.trans(100.0 * ix + 50.0, 100.0 * jy + 50.0);
+                                        let st = map[i][j].to_string();
+                                        let st: &str = &st[..];
+                                        text::Text::new_color([0.1, 1.0, 0.1, 1.0], 32)
+                                            .draw(st, &mut glyphs, &c.draw_state, transform, g)
+                                            .unwrap();
+                                    }
+                                    100..=999 => {
+                                        let transform =
+                                            c.transform.trans(100.0 * ix + 50.0, 100.0 * jy + 50.0);
+                                        let st = map[i][j].to_string();
+                                        let st: &str = &st[..];
+                                        text::Text::new_color([0.1, 1.0, 0.1, 1.0], 32)
+                                            .draw(st, &mut glyphs, &c.draw_state, transform, g)
+                                            .unwrap();
+                                    }
+                                    1000..=9999 => {
+                                        let transform =
+                                            c.transform.trans(100.0 * ix + 50.0, 100.0 * jy + 50.0);
+                                        let st = map[i][j].to_string();
+                                        let st: &str = &st[..];
+                                        text::Text::new_color([0.1, 1.0, 0.1, 1.0], 32)
+                                            .draw(st, &mut glyphs, &c.draw_state, transform, g)
+                                            .unwrap();
+                                    }
+                                    _ => {}
+                                }
+                                glyphs.factory.encoder.flush(d);
                             } else {
                                 let ix = i as f64;
                                 let jy = j as f64;
                                 let square = rectangle::square(100.0 * ix, 100.0 * jy, 100.0);
                                 rectangle(
-                                    [1.0, 0.7, 0.0, 1.0], // red
+                                    [1.0, 0.7, 0.0, 1.0], // yellow
                                     square,
                                     c.transform,
                                     g,
@@ -301,7 +347,7 @@ fn main() {
                 }
             }
             1 => {
-                // state 1 evnt matcher
+                // state 1 event matcher
                 let d = window.wait_event_timeout(Duration::new(10, 0));
                 if d != None {
                     state = stack_dir(d.unwrap(), &mut map);
