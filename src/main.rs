@@ -163,14 +163,14 @@ fn main() {
     let mut chk = false; // if chk == true, then stop the program
     let mut map = vec![vec![0; WIDTH]; HEIGHT]; // game map
     let mut next_2: Vec<(usize, usize)> = Vec::new(); // vector for 0-tiles enumeration
-    let mut state: u8 = 2; // state
+    let mut state: u8 = 0; // state
     let mut score: u32 = 0; // score
     while let Some(e) = window.next() {
         window.draw_2d(&e, |c, g, d| {
-            clear([1.0, 0.7, 0.0, 1.0], g); // background
             match state {
                 0 => {
                     // initialization
+                    clear([1.0, 0.7, 0.0, 1.0], g); // background
                     let xc: f64 = 50.0;
                     let sq = rectangle::square(xc, 30.0, 70.0);
                     rectangle([0.6, 0.2, 0.1, 1.0], sq, c.transform, g);
@@ -246,6 +246,7 @@ fn main() {
                 }
                 1 => {
                     // main game state, draws tiles, etc.
+                    clear([1.0, 0.7, 0.0, 1.0], g); // background
                     let tr = c.transform.trans(110.0, 35.0);
                     text::Text::new_color([1.0, 0.2, 0.1, 1.0], 28)
                         .draw("SCORE: ", &mut glyphs, &c.draw_state, tr, g)
@@ -309,35 +310,43 @@ fn main() {
                 }
                 2 => {
                     // win state
+                    let square = rectangle::square(0.0, 0.0, 450.0);
+                    rectangle(
+                        [1.0, 0.7, 0.0, 0.05], // different red
+                        square,
+                        c.transform,
+                        g,
+                    );
                     let transform = c.transform.trans(65.0, 170.0);
                     text::Text::new_color([1.0, 0.3, 0.3, 1.0], 32)
                         .draw("CONGRATULATIONS!", &mut glyphs, &c.draw_state, transform, g)
                         .unwrap();
 
-                        let transform = c.transform.trans(110.0, 260.0);
-                        text::Text::new_color([1.0, 0.3, 0.3, 1.0], 20)
-                            .draw(
-                                "PRESS [Y] TO RESTART",
-                                &mut glyphs,
-                                &c.draw_state,
-                                transform,
-                                g,
-                            )
-                            .unwrap();
-                        let transform = c.transform.trans(130.0, 290.0);
-                        text::Text::new_color([1.0, 0.3, 0.3, 1.0], 20)
-                            .draw(
-                                "PRESS [N] TO EXIT",
-                                &mut glyphs,
-                                &c.draw_state,
-                                transform,
-                                g,
-                            )
-                            .unwrap();
+                    let transform = c.transform.trans(110.0, 260.0);
+                    text::Text::new_color([1.0, 0.3, 0.3, 1.0], 20)
+                        .draw(
+                            "PRESS [Y] TO RESTART",
+                            &mut glyphs,
+                            &c.draw_state,
+                            transform,
+                            g,
+                        )
+                        .unwrap();
+                    let transform = c.transform.trans(130.0, 290.0);
+                    text::Text::new_color([1.0, 0.3, 0.3, 1.0], 20)
+                        .draw(
+                            "PRESS [N] TO EXIT",
+                            &mut glyphs,
+                            &c.draw_state,
+                            transform,
+                            g,
+                        )
+                        .unwrap();
                     glyphs.factory.encoder.flush(d);
                 }
                 3 => {
                     // loose state
+                    clear([1.0, 0.7, 0.0, 1.0], g); // background
                     let transform = c.transform.trans(90.0, 100.0);
                     text::Text::new_color([1.0, 0.3, 0.3, 1.0], 40)
                         .draw("YOU'VE LOST!", &mut glyphs, &c.draw_state, transform, g)
@@ -431,6 +440,9 @@ fn main() {
                             for j in 0..WIDTH {
                                 if map[i][j] == 0 {
                                     next_2.push((i, j));
+                                } else if map[i][j] == 2048 {
+                                    state = 2;
+                                    continue;
                                 }
                             }
                         }
