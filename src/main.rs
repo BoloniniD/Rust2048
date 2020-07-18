@@ -163,6 +163,8 @@ fn main() {
         .unwrap(); //loading font
     let state0_texts = fs::read_to_string(assets.join("state0_text.txt")).expect("");
     let state0_texts: Vec<&str> = state0_texts.split("==").collect();
+    let state2_texts = fs::read_to_string(assets.join("state2_text.txt")).expect("");
+    let state2_texts: Vec<&str> = state2_texts.split("==").collect();
     let mut chk = false; // if chk == true, then stop the program
     let mut map = vec![vec![0; WIDTH]; HEIGHT]; // game map
     let mut next_2: Vec<(usize, usize)> = Vec::new(); // vector for 0-tiles enumeration
@@ -191,8 +193,11 @@ fn main() {
                         }
                         let col = [col[0], col[1], col[2], col[3]];
                         let font_size: u32 = line[6].trim().parse().expect("");
+                        let mut text_line = line[7].to_string();
+                        text_line.truncate(text_line.len() - 1);
+                        let text_line: &str = &text_line[..];
                         text::Text::new_color(col, font_size)
-                            .draw(line[7], &mut glyphs, &c.draw_state, transform, g)
+                            .draw(text_line, &mut glyphs, &c.draw_state, transform, g)
                             .unwrap();
                     }
                     glyphs.factory.encoder.flush(d);
@@ -265,36 +270,31 @@ fn main() {
                     // win state
                     let square = rectangle::square(0.0, 0.0, 450.0);
                     rectangle(
-                        [1.0, 0.7, 0.0, 0.05], // different red
+                        [1.0, 0.7, 0.0, 0.05],
                         square,
                         c.transform,
                         g,
                     );
-                    let transform = c.transform.trans(65.0, 170.0);
-                    text::Text::new_color([1.0, 0.3, 0.3, 1.0], 32)
-                        .draw("CONGRATULATIONS!", &mut glyphs, &c.draw_state, transform, g)
-                        .unwrap();
-
-                    let transform = c.transform.trans(110.0, 260.0);
-                    text::Text::new_color([1.0, 0.3, 0.3, 1.0], 20)
-                        .draw(
-                            "PRESS [Y] TO RESTART",
-                            &mut glyphs,
-                            &c.draw_state,
-                            transform,
-                            g,
-                        )
-                        .unwrap();
-                    let transform = c.transform.trans(130.0, 290.0);
-                    text::Text::new_color([1.0, 0.3, 0.3, 1.0], 20)
-                        .draw(
-                            "PRESS [N] TO EXIT",
-                            &mut glyphs,
-                            &c.draw_state,
-                            transform,
-                            g,
-                        )
-                        .unwrap();
+                    let text_size = state2_texts.len(); //shows, how many lines are in the text
+                    for i in 0..text_size {
+                        let line: Vec<&str> = state2_texts[i].split("|").collect();
+                        let transf_x: f64 = line[0].trim().parse().expect("");
+                        let transf_y: f64 = line[1].trim().parse().expect("");
+                        let transform = c.transform.trans(transf_x, transf_y);
+                        let mut col: Vec<f32> = Vec::new();
+                        for j in 2..6 {
+                            let temp: f32 = line[j].trim().parse().expect("");
+                            col.push(temp);
+                        }
+                        let col = [col[0], col[1], col[2], col[3]];
+                        let font_size: u32 = line[6].trim().parse().expect("");
+                        let mut text_line = line[7].to_string();
+                        text_line.truncate(text_line.len() - 1);
+                        let text_line: &str = &text_line[..];
+                        text::Text::new_color(col, font_size)
+                            .draw(text_line, &mut glyphs, &c.draw_state, transform, g)
+                            .unwrap();
+                    }
                     glyphs.factory.encoder.flush(d);
                 }
                 3 => {
@@ -419,6 +419,7 @@ fn main() {
                             state = 4;
                         }
                         Some(Button::Keyboard(Key::Y)) => {
+                            score = 0;
                             for i in 0..HEIGHT {
                                 for j in 0..WIDTH {
                                     map[i][j] = 0;
